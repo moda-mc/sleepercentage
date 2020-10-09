@@ -1,6 +1,9 @@
 # Percentage of players that need to be sleeping for the plugin to skip the night
 
-message: "&7[&bSleepercentage&7] &b{PLAYER}&7 would like to sleep &8[&b{CURRENT}&7/&b{NEEDED}&8]"
+messages:
+  sleeping: "&7[&bSleepercentage&7] &b{PLAYER}&7 would like to sleep &8[&b{CURRENT}&7/&b{NEEDED}&8]"
+  skipped: "&7[&bSleepercentage&7] Enough players went to sleep and the night was skipped."
+
 percentage: 50%
 worlds:
   - world
