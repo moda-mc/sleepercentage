@@ -54,6 +54,8 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerWake(PlayerBedLeaveEvent event) { update(event); }
 
+
+    // TODO fix the stream thing?
     public void update(PlayerEvent event) {
         sleeperWorlds.stream().filter(sleeperWorld -> {
             return sleeperWorld.world.equals(event.getPlayer().getWorld());
