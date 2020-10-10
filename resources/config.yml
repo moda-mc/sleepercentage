@@ -1,9 +1,27 @@
 # Percentage of players that need to be sleeping for the plugin to skip the night
 
-messages:
-  sleeping: "&7[&bSleepercentage&7] &b{PLAYER}&7 would like to sleep &8[&b{CURRENT}&7/&b{NEEDED}&8]"
-  skipped: "&7[&bSleepercentage&7] Enough players went to sleep and the night was skipped."
+plugin-prefix: "&7[&bSleepercentage&7]"
 
-percentage: 50%
-worlds:
-  - world
+settings:
+  skip-nights: true     # toggles being able to skip nights
+  skip-storms: true     # toggles being able to skip storms
+  percentage: 50%       # percentage of players needed to skip nights/storms
+  sleep-wait: 5         # amount of seconds to wait before skipping nights/storms
+
+  messages:             # configurable messages for specific events.
+    sleeping: "{PLUGIN-PREFIX} &b{PLAYER}&7 would like to sleep. &8[&b{CURRENT}&7/&b{NEEDED}&8]"
+    skipped:
+      night: "{PLUGIN-PREFIX} Enough players went to sleep and the night was skipped."
+      storm: "{PLUGIN-PREFIX} Enough players went to sleep and the storm was skipped."
+
+  worlds:                 # per-world settings for night/storm skips
+    pvp:
+#      sleep-wait: 0
+#      skip-nights: false
+#      skip-storms: true
+#      percentage: 30%
+#      messages: # configurable messages for specific events.
+#        sleeping: "{PLUGIN-PREFIX} &b{PLAYER}&7 would like to sleep. &8[&b{CURRENT}&7/&b{NEEDED}&8]"
+#        skipped:
+#          night: "{PLUGIN-PREFIX} Enough players went to sleep and the night was skipped."
+#          storm: "{PLUGIN-PREFIX} Enough players went to sleep and the storm was skipped."
