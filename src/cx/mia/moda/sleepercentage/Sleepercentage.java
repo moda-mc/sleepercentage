@@ -207,7 +207,8 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
         });
     }
 
-    public <T> T getSetting(String worldName, String setting) {
+    @SuppressWarnings("unchecked")
+	public <T> T getSetting(String worldName, String setting) {
 
         if ( config.contains("settings.worlds." + worldName + "." + setting) ) {
 
