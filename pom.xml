@@ -6,7 +6,7 @@
 
     <groupId>cx.mia</groupId>
     <artifactId>sleepercentage</artifactId>
-    <version>nightly</version>
+    <version>0.1</version>
 
     <name>Sleepercentage</name>
     <url>https://github.com/miadotcx/Sleepercentage</url>
@@ -83,6 +83,18 @@
             <artifactId>spigot-api</artifactId>
             <version>1.8.8-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>moda.plugin</groupId>
+            <artifactId>moda</artifactId>
+            <version>canary</version>
+        </dependency>
+
+        <dependency>
+            <groupId>xyz.derkades</groupId>
+            <artifactId>Derkutils</artifactId>
+            <version>master</version>
         </dependency>
     </dependencies>
 
