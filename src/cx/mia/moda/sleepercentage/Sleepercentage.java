@@ -3,11 +3,13 @@ package cx.mia.moda.sleepercentage;
 import moda.plugin.moda.module.IMessage;
 import moda.plugin.moda.module.Module;
 import moda.plugin.moda.module.storage.NoStorageHandler;
+import moda.plugin.moda.placeholder.ModaPlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -15,7 +17,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
 
-public final class Sleepercentage extends Module<NoStorageHandler> {
+public final class Sleepercentage extends Module<NoStorageHandler> implements Listener {
 
     public FileConfiguration config;
 
@@ -40,6 +42,8 @@ public final class Sleepercentage extends Module<NoStorageHandler> {
         this.config = getConfig();
 
         update();
+
+        registerListener(this);
 
     }
 
@@ -86,13 +90,21 @@ public final class Sleepercentage extends Module<NoStorageHandler> {
     @EventHandler(ignoreCancelled = true)
     public void onPlayerBedEnter(PlayerBedEnterEvent event) {
 
+        getLogger().info("PBEE"); // TODO
+
         String playerName = event.getPlayer().getName();
         UUID uuid = event.getPlayer().getUniqueId();
         String worldName = event.getPlayer().getWorld().getName();
 
-        BukkitTask task = this.getScheduler().delay((int) (20 * config.getDouble("settings.default.sleep-wait")), () -> {
+        getLogger().info(playerName + worldName); // TODO
+
+        BukkitTask task = this.getScheduler().delay((20 * (int) getSetting(worldName, "sleep-wait")), () -> {
+
+            getLogger().info("task exec"); // TODO
 
             Player player = Bukkit.getPlayer(uuid);
+
+            getLogger().info(String.valueOf(player == null)); // TODO
 
             if (player == null || !player.isSleeping()) return;
 
@@ -101,9 +113,11 @@ public final class Sleepercentage extends Module<NoStorageHandler> {
             float percentage = percentageFromString(getSetting(worldName, "percentage"));
             int playersNeeded = Math.round(ENFORCED_SLEEPERS.get(worldName) * percentage);
 
-            String message = this.getLang().getMessage(SleepercentageMessage.SLEEPING,
-                    "CURRENT_SLEEPERS", CURRENT_SLEEPERS.get(worldName),
-                    "NEEDED_SLEEPERS", playersNeeded);
+            String message = ModaPlaceholderAPI.parsePlaceholders(
+                    this.getLang().getMessage(
+                            SleepercentageMessage.SLEEPING,
+                                "CURRENT_SLEEPERS", String.valueOf(CURRENT_SLEEPERS.get(worldName).size()),
+                                "NEEDED_SLEEPERS", playersNeeded), player);
 
             player.getWorld().getPlayers().forEach(p -> {
                 p.sendMessage(message);
@@ -116,6 +130,8 @@ public final class Sleepercentage extends Module<NoStorageHandler> {
             skip(worldName);
 
         });
+
+        getLogger().info("task add"); // TODO
 
         TASKS.put(playerName, task.getTaskId());
 
@@ -200,7 +216,7 @@ public final class Sleepercentage extends Module<NoStorageHandler> {
 
         }
 
-        return (T) config.get("settings.default." + setting);
+        return (T) config.get("settings." + setting);
 
     }
 
