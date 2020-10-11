@@ -12,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitTask;
+import xyz.derkades.derkutils.bukkit.Colors;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -163,7 +164,7 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         if (world.getTime() > 12000 && (boolean) getSetting(worldName, "skip-nights")) {
 
-            world.getPlayers().forEach(player -> getLang().getMessage(SleepercentageMessage.SKIP_NIGHT));
+            world.getPlayers().forEach(player -> player.sendMessage(Colors.parseColors(getLang().getMessage(SleepercentageMessage.SKIP_NIGHT))));
 
             world.setTime(0);
 
@@ -171,7 +172,7 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         if (world.hasStorm() && (boolean) getSetting(worldName, "skip-storms")) {
 
-            world.getPlayers().forEach(player -> getLang().getMessage(SleepercentageMessage.SKIP_STORM));
+            world.getPlayers().forEach(player -> player.sendMessage(Colors.parseColors(getLang().getMessage(SleepercentageMessage.SKIP_STORM))));
 
             world.setStorm(false);
 
