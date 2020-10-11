@@ -184,20 +184,17 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
         CURRENT_SLEEPERS.clear();
 
         Bukkit.getWorlds().forEach(world -> {
-            if (world == null) return;
+
+            CURRENT_SLEEPERS.put(world.getName(), new HashSet<>());
 
             getLogger().debug("Updating for world " + world.getName());
 
             world.getPlayers().forEach(player -> {
-                if (player == null) return;
 
                 getLogger().debug("Updating for player " + player.getName());
 
                 if (player.isSleeping()) {
-                    CURRENT_SLEEPERS.compute(world.getName(), (k, v) -> {
-                        if (v == null) {
-                            v = new HashSet<>();
-                        }
+                    CURRENT_SLEEPERS.computeIfPresent(world.getName(), (k, v) -> {
                         v.add(player.getName());
                         return v;
                     });
