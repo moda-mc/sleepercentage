@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cx.mia</groupId>
+    <groupId>cx.mia.moda</groupId>
     <artifactId>sleepercentage</artifactId>
     <version>0.1</version>
 
@@ -89,13 +89,15 @@
             <groupId>moda.plugin</groupId>
             <artifactId>moda</artifactId>
             <version>canary</version>
+            <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>xyz.derkades</groupId>
-            <artifactId>Derkutils</artifactId>
-            <version>master</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>xyz.derkades</groupId>-->
+<!--            <artifactId>Derkutils</artifactId>-->
+<!--            <version>master</version>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
     </dependencies>
 
 </project>

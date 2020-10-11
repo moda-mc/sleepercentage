@@ -1,4 +1,4 @@
-package cx.mia.sleepercentage;
+package cx.mia.moda.sleepercentage;
 
 import moda.plugin.moda.module.IMessage;
 
