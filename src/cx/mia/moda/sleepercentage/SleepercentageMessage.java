@@ -4,7 +4,7 @@ import moda.plugin.moda.module.IMessage;
 
 public enum SleepercentageMessage implements IMessage {
 
-    SLEEPING("sleeping", "&b{DISPLAYNAME}&7 would like to sleep. &8[&b{CURRENT_SLEEPERS}&7/&b{NEEDED_SLEEPERS}&8]"),
+    SLEEPING("sleeping", "&d{DISPLAYNAME}&7 would like to sleep. &8[&d{CURRENT_SLEEPERS}&8/&5{NEEDED_SLEEPERS}&8]"),
     SKIP_NIGHT("skip.night", "&7Enough players went to sleep and the night was skipped."),
     SKIP_STORM("skip.storm", "&7Enough players went to sleep and the storm was skipped."),
 
