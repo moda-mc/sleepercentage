@@ -1,34 +1,45 @@
 package cx.mia.sleepercentage;
 
+import moda.plugin.moda.module.IMessage;
+import moda.plugin.moda.module.Module;
+import moda.plugin.moda.module.storage.NoStorageHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
 
-public final class Sleepercentage extends JavaPlugin implements Listener {
+public final class Sleepercentage extends Module<NoStorageHandler> {
 
     public FileConfiguration config;
 
     public static NumberFormat PERCENT_FORMAT = NumberFormat.getPercentInstance();
-    static final HashMap<String, Set<String>> PLAYERS_SLEEPING = new HashMap<>();
-    static final HashMap<String, Integer> PLAYERS_NEEDED = new HashMap<>();
+    static final HashMap<String, Set<String>> CURRENT_SLEEPERS = new HashMap<>();
+    static final HashMap<String, Integer> ENFORCED_SLEEPERS = new HashMap<>();
     static final Map<String, Integer> TASKS = new HashMap<>();
+
+    @Override
+    public String getName() {
+        return "Sleepercentage";
+    }
+
+    @Override
+    public IMessage[] getMessages() {
+        return SleepercentageMessage.values();
+    }
 
     @Override
     public void onEnable() {
 
         this.config = getConfig();
 
-        this.saveDefaultConfig();
-        Bukkit.getPluginManager().registerEvents(this, this);
+        update();
 
     }
 
@@ -39,11 +50,10 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
 
         if (player.hasPermission("sleepercentage.exempt")) return;
 
-        PLAYERS_NEEDED.compute(event.getFrom().getName(), (k, v) -> v == null ? 0 : --v);
-        PLAYERS_NEEDED.compute(event.getPlayer().getWorld().getName(), (k, v) -> v == null ? 0 : ++v);
+        ENFORCED_SLEEPERS.compute(event.getFrom().getName(), (k, v) -> v == null ? 0 : --v);
+        ENFORCED_SLEEPERS.compute(event.getPlayer().getWorld().getName(), (k, v) -> v == null ? 0 : ++v);
 
         skip(event.getPlayer().getWorld().getName());
-        // TODO trigger skip logic
 
     }
 
@@ -54,7 +64,7 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
 
         if (player.hasPermission("sleepercentage.exempt")) return;
 
-        PLAYERS_NEEDED.compute(event.getPlayer().getWorld().getName(), (k, v) -> v == null ? 0 : ++v);
+        ENFORCED_SLEEPERS.compute(event.getPlayer().getWorld().getName(), (k, v) -> v == null ? 0 : ++v);
 
     }
 
@@ -65,11 +75,11 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
 
         if (player.hasPermission("sleepercentage.exempt")) return;
 
-        World world = player.getWorld();
+        String worldName = player.getWorld().getName();
 
-        PLAYERS_NEEDED.compute(world.getName(), (k, v) -> v == null ? 0 : --v);
+        ENFORCED_SLEEPERS.compute(worldName, (k, v) -> v == null ? 0 : --v);
 
-        // TODO trigger skip logic
+        skip(worldName);
 
     }
 
@@ -80,22 +90,34 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
         UUID uuid = event.getPlayer().getUniqueId();
         String worldName = event.getPlayer().getWorld().getName();
 
-        int task = Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
+        BukkitTask task = this.getScheduler().delay((int) (20 * config.getDouble("settings.default.sleep-wait")), () -> {
 
             Player player = Bukkit.getPlayer(uuid);
 
             if (player == null || !player.isSleeping()) return;
 
-            Set<String> playersSleeping = PLAYERS_SLEEPING.computeIfAbsent(worldName, k -> new HashSet<>());
+            Set<String> playersSleeping = CURRENT_SLEEPERS.computeIfAbsent(worldName, k -> new HashSet<>());
 
-            // TODO broadcast sleeping message
+            float percentage = percentageFromString(getSetting(worldName, "percentage"));
+            int playersNeeded = Math.round(ENFORCED_SLEEPERS.get(worldName) * percentage);
+
+            String message = this.getLang().getMessage(SleepercentageMessage.SLEEPING,
+                    "CURRENT_SLEEPERS", CURRENT_SLEEPERS.get(worldName),
+                    "NEEDED_SLEEPERS", playersNeeded);
+
+            player.getWorld().getPlayers().forEach(p -> {
+                p.sendMessage(message);
+            });
+
             playersSleeping.add(playerName);
 
-        }, (long) (20 * config.getDouble("settings.default.sleep-wait")));
+            TASKS.remove(playerName);
 
-        TASKS.put(playerName, task);
+            skip(worldName);
 
-        // TODO trigger skip logic
+        });
+
+        TASKS.put(playerName, task.getTaskId());
 
     }
 
@@ -110,7 +132,7 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
             return null;
         });
 
-        Set<String> playersSleeping = PLAYERS_SLEEPING.computeIfAbsent(world.getName(), k -> new HashSet<>());
+        Set<String> playersSleeping = CURRENT_SLEEPERS.computeIfAbsent(world.getName(), k -> new HashSet<>());
 
         playersSleeping.remove(player.getName());
 
@@ -119,32 +141,54 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
     public void skip(String worldName) {
 
         float percentage = percentageFromString(getSetting(worldName, "percentage"));
-        int playersNeeded = Math.round(PLAYERS_NEEDED.get(worldName) * percentage);
+        int playersNeeded = Math.round(ENFORCED_SLEEPERS.get(worldName) * percentage);
 
-        if (PLAYERS_SLEEPING.get(worldName).size() < playersNeeded) return;
+        if (CURRENT_SLEEPERS.get(worldName).size() < playersNeeded) return;
 
         if (Bukkit.getWorld(worldName) == null) return;
 
         World world = Bukkit.getWorld(worldName);
 
-        if (world.hasStorm() && (boolean) getSetting(worldName, "skip-storms")) {
-
-            // TODO message
-
-
-
-            world.setStorm(false);
-
-        }
-
         if (world.getTime() > 12000 && (boolean) getSetting(worldName, "skip-nights")) {
 
-            // TODO message
+            world.getPlayers().forEach(player -> getLang().getMessage(SleepercentageMessage.SKIP_NIGHT));
 
             world.setTime(0);
 
         }
 
+        if (world.hasStorm() && (boolean) getSetting(worldName, "skip-storms")) {
+
+            world.getPlayers().forEach(player -> getLang().getMessage(SleepercentageMessage.SKIP_STORM));
+
+            world.setStorm(false);
+
+        }
+
+
+
+    }
+
+    public void update() {
+
+        ENFORCED_SLEEPERS.clear();
+        CURRENT_SLEEPERS.clear();
+
+        Bukkit.getWorlds().forEach(world -> {
+            world.getPlayers().forEach(player -> {
+
+                if (player.isSleeping()) {
+                    Set<String> playersSleeping = CURRENT_SLEEPERS.computeIfAbsent(world.getName(), k -> new HashSet<>());
+                }
+
+                if (player.hasPermission("sleepercentage.exempt")) return;
+
+                ENFORCED_SLEEPERS.compute(world.getName(), (k, v) -> v == null ? 0 : ++v);
+
+                skip(world.getName());
+
+            });
+        });
     }
 
     public <T> T getSetting(String worldName, String setting) {
@@ -158,61 +202,6 @@ public final class Sleepercentage extends JavaPlugin implements Listener {
         return (T) config.get("settings.default." + setting);
 
     }
-
-
-    // TODO fix the stream thing?
-//    public void update(World world) {
-//
-//        ArrayList<UUID> enforcedPlayers = new ArrayList<>();
-//        ArrayList<UUID> sleepingPlayers = new ArrayList<>();
-//
-//        for (Player player : world.getPlayers()) {
-//
-//            UUID uuid = player.getUniqueId();
-//            if (!player.hasPermission("sleepercentage.exempt")) {
-//
-//                if (!enforcedPlayers.contains(uuid)) enforcedPlayers.add(uuid);
-//
-//                int required = Math.round(enforcedPlayers.size() * Sleepercentage.percentageFromString(config.getString("percentage")));
-//
-//                if (player.isSleeping()) {
-//
-//                    if (!sleepingPlayers.contains(uuid)) {
-//                        sleepingPlayers.add(uuid);
-//
-//                        String sleeping = ChatColor.translateAlternateColorCodes('&', config.getString("messages.sleeping"));
-//
-//                        sleeping = sleeping.replace("{PLAYER}", player.getDisplayName());
-//                        sleeping = sleeping.replace("{CURRENT}", String.valueOf(sleepingPlayers.size()));
-//                        sleeping = sleeping.replace("{NEEDED}", String.valueOf(required));
-//
-//                        for (UUID enforcedPlayerUUID : enforcedPlayers) {
-//                            Player enforcedPlayer = Bukkit.getPlayer(enforcedPlayerUUID);
-//                            enforcedPlayer.sendMessage(sleeping);
-//                        }
-//                    }
-//
-//                } else {
-//                    sleepingPlayers.remove(uuid);
-//                }
-//            } else {
-//                enforcedPlayers.remove(uuid);
-//            }
-//        }
-//
-//        int required = Math.round(enforcedPlayers.size() * Sleepercentage.percentageFromString(config.getString("percentage")));
-//
-//        if (sleepingPlayers.size() >= required && required > 0) {
-//
-//            String skipped = ChatColor.translateAlternateColorCodes('&', config.getString("messages.skipped"));
-//
-//            world.getPlayers().forEach(player -> {
-//                player.sendMessage(skipped);
-//            });
-//
-//            world.setTime(0);
-//        }
-//    }
 
     public static Float percentageFromString(String s) {
 
