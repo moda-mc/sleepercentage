@@ -155,6 +155,8 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         if (Bukkit.getWorld(worldName) == null) return;
 
+        getLogger().debug("current: "+ CURRENT_SLEEPERS.get(worldName).size() + "\nneeded: " + getNeededSleepers(worldName));
+
         if (CURRENT_SLEEPERS.get(worldName).size() < getNeededSleepers(worldName)) return;
 
         World world = Bukkit.getWorld(worldName);
@@ -182,7 +184,14 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
         CURRENT_SLEEPERS.clear();
 
         Bukkit.getWorlds().forEach(world -> {
+            if (world == null) return;
+
+            getLogger().debug("Updating for world " + world.getName());
+
             world.getPlayers().forEach(player -> {
+                if (player == null) return;
+
+                getLogger().debug("Updating for player " + player.getName());
 
                 if (player.isSleeping()) {
                     CURRENT_SLEEPERS.compute(world.getName(), (k, v) -> {
