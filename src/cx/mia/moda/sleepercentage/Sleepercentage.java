@@ -23,7 +23,6 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
     public static NumberFormat PERCENT_FORMAT = NumberFormat.getPercentInstance();
     static final HashMap<String, Set<String>> CURRENT_SLEEPERS = new HashMap<>();
-    static final HashMap<String, Integer> ENFORCED_SLEEPERS = new HashMap<>();
     static final Map<String, Integer> TASKS = new HashMap<>();
 
     @Override
@@ -43,96 +42,86 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         update();
 
+        ModaPlaceholderAPI.addPlaceholder("CURRENT_SLEEPERS", player -> {
+            return CURRENT_SLEEPERS.get(player.getWorld().getName()).size();
+        });
+
         registerListener(this);
 
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onWorldSwitch(PlayerChangedWorldEvent event) {
-
         Player player = event.getPlayer();
+        String worldName = player.getWorld().getName();
 
-        if (player.hasPermission("sleepercentage.exempt")) return;
+        getLogger().debug("Player " + player.getName() + " switched to world " + worldName + ".");
 
-        ENFORCED_SLEEPERS.compute(event.getFrom().getName(), (k, v) -> v == null ? 0 : --v);
-        ENFORCED_SLEEPERS.compute(event.getPlayer().getWorld().getName(), (k, v) -> v == null ? 0 : ++v);
-
-        skip(event.getPlayer().getWorld().getName());
-
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onPlayerJoin(PlayerJoinEvent event) {
-
-        Player player = event.getPlayer();
-
-        if (player.hasPermission("sleepercentage.exempt")) return;
-
-        ENFORCED_SLEEPERS.compute(event.getPlayer().getWorld().getName(), (k, v) -> v == null ? 0 : ++v);
-
+        getLogger().debug("Trying to skip in " + worldName + ".");
+        skip(worldName);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent event) {
 
         Player player = event.getPlayer();
-
-        if (player.hasPermission("sleepercentage.exempt")) return;
-
         String worldName = player.getWorld().getName();
 
-        ENFORCED_SLEEPERS.compute(worldName, (k, v) -> v == null ? 0 : --v);
+        getLogger().debug("Player " + player.getName() + " joined in world " + worldName + ".");
 
+        getLogger().debug("Trying to skip in " + worldName + ".");
         skip(worldName);
-
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerBedEnter(PlayerBedEnterEvent event) {
 
-        getLogger().info("PBEE"); // TODO
-
         String playerName = event.getPlayer().getName();
-        UUID uuid = event.getPlayer().getUniqueId();
         String worldName = event.getPlayer().getWorld().getName();
+        String bedLocation = event.getBed().getLocation().toString();
 
-        getLogger().info(playerName + worldName); // TODO
+        UUID uuid = event.getPlayer().getUniqueId();
+
+        getLogger().debug(playerName + " Entered bed at " + bedLocation + " in world " + worldName + ".");
 
         BukkitTask task = this.getScheduler().delay((20 * (int) getSetting(worldName, "sleep-wait")), () -> {
 
-            getLogger().info("task exec"); // TODO
-
             Player player = Bukkit.getPlayer(uuid);
 
-            getLogger().info(String.valueOf(player == null)); // TODO
+            if (player == null || !player.isSleeping()) {
+                getLogger().debug("Player " + playerName + " stopped sleeping or logged out before task was triggered.");
+                return;
+            }
 
-            if (player == null || !player.isSleeping()) return;
+            getLogger().debug("Adding player " + playerName + " to current sleepers.");
+            Set<String> currentSleepers = CURRENT_SLEEPERS.compute(worldName, (k, v) -> {
+                if (v == null) {
+                    v = new HashSet<>();
+                }
+                v.add(playerName);
+                return v;
+            });
 
-            Set<String> playersSleeping = CURRENT_SLEEPERS.computeIfAbsent(worldName, k -> new HashSet<>());
-
-            float percentage = percentageFromString(getSetting(worldName, "percentage"));
-            int playersNeeded = Math.round(ENFORCED_SLEEPERS.get(worldName) * percentage);
-
-            playersSleeping.add(playerName);
-
+            getLogger().debug("Broadcasting " + playerName + "'s PBEE to " + worldName + ".");
             String message = ModaPlaceholderAPI.parsePlaceholders(
                     this.getLang().getMessage(
                             SleepercentageMessage.SLEEPING,
-                                "CURRENT_SLEEPERS", String.valueOf(CURRENT_SLEEPERS.get(worldName).size()),
-                                "NEEDED_SLEEPERS", playersNeeded), player);
+                                "CURRENT_SLEEPERS", String.valueOf(currentSleepers.size()),
+                                "NEEDED_SLEEPERS", getNeededSleepers(worldName)), player);
 
             player.getWorld().getPlayers().forEach(p -> {
                 p.sendMessage(message);
             });
 
+            getLogger().debug("Removing finished task.");
             TASKS.remove(playerName);
 
+            getLogger().debug("Trying to skip in " + worldName + ".");
             skip(worldName);
 
         });
 
-        getLogger().info("task add"); // TODO
-
+        getLogger().debug("Added delayed task with ID " + task.getTaskId() + ".");
         TASKS.put(playerName, task.getTaskId());
 
     }
@@ -140,28 +129,33 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
     @EventHandler(ignoreCancelled = true)
     public void onPlayerWake(PlayerBedLeaveEvent event) {
 
-        Player player = event.getPlayer();
-        World world = player.getWorld();
+        String playerName = event.getPlayer().getName();
+        String worldName = event.getPlayer().getWorld().getName();
+        String bedLocation = event.getBed().getLocation().toString();
 
-        TASKS.computeIfPresent(player.getName(), (k, v) -> {
+        getLogger().debug(playerName + " left bed at " + bedLocation + " in world " + worldName + ".");
+
+        getLogger().debug(playerName + " left bed at " + bedLocation + " in world " + worldName + ".");
+        TASKS.computeIfPresent(playerName, (k, v) -> {
             Bukkit.getScheduler().cancelTask(v);
             return null;
         });
 
-        Set<String> playersSleeping = CURRENT_SLEEPERS.computeIfAbsent(world.getName(), k -> new HashSet<>());
-
-        playersSleeping.remove(player.getName());
+        CURRENT_SLEEPERS.compute(worldName, (k, v) -> {
+            if (v == null) {
+                v = new HashSet<>();
+            }
+            v.remove(playerName);
+            return v;
+        });
 
     }
 
     public void skip(String worldName) {
 
-        float percentage = percentageFromString(getSetting(worldName, "percentage"));
-        int playersNeeded = Math.round(ENFORCED_SLEEPERS.get(worldName) * percentage);
-
-        if (CURRENT_SLEEPERS.get(worldName).size() < playersNeeded) return;
-
         if (Bukkit.getWorld(worldName) == null) return;
+
+        if (CURRENT_SLEEPERS.get(worldName).size() < getNeededSleepers(worldName)) return;
 
         World world = Bukkit.getWorld(worldName);
 
@@ -181,29 +175,26 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         }
 
-
-
     }
 
     public void update() {
 
-        ENFORCED_SLEEPERS.clear();
         CURRENT_SLEEPERS.clear();
 
         Bukkit.getWorlds().forEach(world -> {
             world.getPlayers().forEach(player -> {
 
                 if (player.isSleeping()) {
-                    Set<String> playersSleeping = CURRENT_SLEEPERS.computeIfAbsent(world.getName(), k -> new HashSet<>());
+                    CURRENT_SLEEPERS.compute(world.getName(), (k, v) -> {
+                        if (v == null) {
+                            v = new HashSet<>();
+                        }
+                        v.add(player.getName());
+                        return v;
+                    });
                 }
-
-                if (player.hasPermission("sleepercentage.exempt")) return;
-
-                ENFORCED_SLEEPERS.compute(world.getName(), (k, v) -> v == null ? 0 : ++v);
-
-                skip(world.getName());
-
             });
+            skip(world.getName());
         });
     }
 
@@ -217,6 +208,16 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
         }
 
         return (T) config.get("settings." + setting);
+
+    }
+
+    private int getNeededSleepers(String worldName) {
+
+        int enforcedSleepers = (int) Bukkit.getWorld(worldName).getPlayers().stream()
+                .filter(p -> !p.hasPermission("sleepercentage.exempt"))
+                .count();
+
+        return Math.round(enforcedSleepers * percentageFromString(getSetting(worldName, "percentage")));
 
     }
 
