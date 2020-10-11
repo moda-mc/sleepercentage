@@ -113,6 +113,8 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
             float percentage = percentageFromString(getSetting(worldName, "percentage"));
             int playersNeeded = Math.round(ENFORCED_SLEEPERS.get(worldName) * percentage);
 
+            playersSleeping.add(playerName);
+
             String message = ModaPlaceholderAPI.parsePlaceholders(
                     this.getLang().getMessage(
                             SleepercentageMessage.SLEEPING,
@@ -122,8 +124,6 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
             player.getWorld().getPlayers().forEach(p -> {
                 p.sendMessage(message);
             });
-
-            playersSleeping.add(playerName);
 
             TASKS.remove(playerName);
 
