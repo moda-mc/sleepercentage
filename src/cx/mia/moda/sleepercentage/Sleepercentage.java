@@ -4,6 +4,7 @@ import moda.plugin.moda.module.IMessage;
 import moda.plugin.moda.module.Module;
 import moda.plugin.moda.module.storage.NoStorageHandler;
 import moda.plugin.moda.placeholder.ModaPlaceholderAPI;
+import moda.plugin.moda.placeholder.ModaPlayerPlaceholder;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -43,9 +44,12 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         update();
 
-        ModaPlaceholderAPI.addPlaceholder("CURRENT_SLEEPERS", player -> {
-            return CURRENT_SLEEPERS.get(player.getWorld().getName()).size();
-        });
+        ModaPlaceholderAPI.registerPlaceholder(new ModaPlayerPlaceholder("CURRENT_SLEEPERS", player -> {
+            return String.valueOf(CURRENT_SLEEPERS.get(player.getWorld().getName()).size());
+        }));
+        ModaPlaceholderAPI.registerPlaceholder(new ModaPlayerPlaceholder("NEEDED_SLEEPERS", player -> {
+            return String.valueOf(getNeededSleepers(player.getWorld().getName()));
+        }));
 
         registerListener(this);
 
@@ -104,11 +108,16 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
             });
 
             getLogger().debug("Broadcasting " + playerName + "'s PBEE to " + worldName + ".");
-            String message = ModaPlaceholderAPI.parsePlaceholders(
-                    this.getLang().getMessage(
-                            SleepercentageMessage.SLEEPING,
-                                "CURRENT_SLEEPERS", String.valueOf(currentSleepers.size()),
-                                "NEEDED_SLEEPERS", getNeededSleepers(worldName)), player);
+
+            String message = ModaPlaceholderAPI.parsePlaceholders(Optional.of(player),
+                    this.getLang().getMessage(SleepercentageMessage.SLEEPING));
+
+
+//            String message = ModaPlaceholderAPI.parsePlaceholders(
+//                    this.getLang().getMessage(
+//                            SleepercentageMessage.SLEEPING,
+//                                "CURRENT_SLEEPERS", String.valueOf(currentSleepers.size()),
+//                                "NEEDED_SLEEPERS", getNeededSleepers(worldName)), player);
 
             player.getWorld().getPlayers().forEach(p -> {
                 p.sendMessage(message);
