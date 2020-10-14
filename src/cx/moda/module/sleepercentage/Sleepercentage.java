@@ -1,17 +1,20 @@
-package cx.mia.moda.sleepercentage;
+package cx.moda.module.sleepercentage;
 
-import moda.plugin.moda.module.IMessage;
-import moda.plugin.moda.module.Module;
-import moda.plugin.moda.module.storage.NoStorageHandler;
-import moda.plugin.moda.placeholder.ModaPlaceholderAPI;
-import moda.plugin.moda.placeholder.ModaPlayerPlaceholder;
+import cx.moda.moda.module.IMessage;
+import cx.moda.moda.module.Module;
+import cx.moda.moda.module.storage.NoStorageHandler;
+import cx.moda.moda.placeholder.ModaPlaceholderAPI;
+import cx.moda.moda.placeholder.ModaPlayerPlaceholder;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBedLeaveEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 import xyz.derkades.derkutils.bukkit.Colors;
 
@@ -44,10 +47,10 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         update();
 
-        ModaPlaceholderAPI.registerPlaceholder(new ModaPlayerPlaceholder("CURRENT_SLEEPERS", player -> {
+        ModaPlaceholderAPI.registerPlaceholder(new ModaPlayerPlaceholder("SLEEPERCENTAGE.SLEEPERS", player -> {
             return String.valueOf(CURRENT_SLEEPERS.get(player.getWorld().getName()).size());
         }));
-        ModaPlaceholderAPI.registerPlaceholder(new ModaPlayerPlaceholder("NEEDED_SLEEPERS", player -> {
+        ModaPlaceholderAPI.registerPlaceholder(new ModaPlayerPlaceholder("SLEEPERCENTAGE.REQUIRED", player -> {
             return String.valueOf(getNeededSleepers(player.getWorld().getName()));
         }));
 
@@ -63,7 +66,7 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
         getLogger().debug("Player " + player.getName() + " switched to world " + worldName + ".");
 
         getLogger().debug("Trying to skip in " + worldName + ".");
-        skip(worldName);
+        skip(event.getFrom().getName());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -111,13 +114,6 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
             String message = ModaPlaceholderAPI.parsePlaceholders(Optional.of(player),
                     this.getLang().getMessage(SleepercentageMessage.SLEEPING));
-
-
-//            String message = ModaPlaceholderAPI.parsePlaceholders(
-//                    this.getLang().getMessage(
-//                            SleepercentageMessage.SLEEPING,
-//                                "CURRENT_SLEEPERS", String.valueOf(currentSleepers.size()),
-//                                "NEEDED_SLEEPERS", getNeededSleepers(worldName)), player);
 
             player.getWorld().getPlayers().forEach(p -> {
                 p.sendMessage(message);

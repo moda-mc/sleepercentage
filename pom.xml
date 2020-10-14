@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cx.mia.moda</groupId>
+    <groupId>cx.moda.module</groupId>
     <artifactId>sleepercentage</artifactId>
-    <version>0.1</version>
+    <version>1.0</version>
 
     <name>Sleepercentage</name>
-    <url>https://github.com/miadotcx/Sleepercentage</url>
+    <url>https://github.com/ModaPlugin/Sleepercentage</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -50,7 +50,7 @@
                     <relocations>
                         <relocation>
                             <pattern>org.bstats</pattern>
-                            <shadedPattern>cx.mia.sleepercentage.lib.org.bstats</shadedPattern>
+                            <shadedPattern>cx.moda.module.sleepercentage.lib.org.bstats</shadedPattern>
                         </relocation>
                     </relocations>
 
@@ -86,18 +86,11 @@
         </dependency>
 
         <dependency>
-            <groupId>moda.plugin</groupId>
+            <groupId>cx.moda</groupId>
             <artifactId>moda</artifactId>
-            <version>canary</version>
+            <version>alpha</version>
             <scope>provided</scope>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>xyz.derkades</groupId>-->
-<!--            <artifactId>Derkutils</artifactId>-->
-<!--            <version>master</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
     </dependencies>
 
 </project>
