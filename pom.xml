@@ -4,6 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <artifactId>moda</artifactId>
+        <groupId>cx.moda</groupId>
+        <version>alpha</version>
+        <relativePath>../../moda/pom.xml</relativePath>
+    </parent>
+
     <groupId>cx.moda.module</groupId>
     <artifactId>sleepercentage</artifactId>
     <version>1.0</version>
