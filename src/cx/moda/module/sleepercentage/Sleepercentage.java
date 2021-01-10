@@ -112,8 +112,7 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
             getLogger().debug("Broadcasting " + playerName + "'s PBEE to " + worldName + ".");
 
-            String message = ModaPlaceholderAPI.parsePlaceholders(Optional.of(player),
-                    this.getLang().getMessage(SleepercentageMessage.SLEEPING));
+            String message = this.getLang().getMessage(SleepercentageMessage.SLEEPING, player);
 
             player.getWorld().getPlayers().forEach(p -> {
                 p.sendMessage(message);
@@ -163,7 +162,7 @@ public final class Sleepercentage extends Module<NoStorageHandler> implements Li
 
         getLogger().debug("current: "+ CURRENT_SLEEPERS.get(worldName).size() + "\nneeded: " + getNeededSleepers(worldName));
 
-        if (CURRENT_SLEEPERS.get(worldName).size() < getNeededSleepers(worldName)) return;
+        if (CURRENT_SLEEPERS.get(worldName).size() < getNeededSleepers(worldName) || CURRENT_SLEEPERS.get(worldName).size() == 0) return;
 
         World world = Bukkit.getWorld(worldName);
 

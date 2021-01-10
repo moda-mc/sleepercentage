@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cx.moda.module</groupId>
-    <artifactId>Sleepercentage</artifactId>
+    <artifactId>sleepercentage</artifactId>
     <version>1.0</version>
 
     <name>Sleepercentage</name>
